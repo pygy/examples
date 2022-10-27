@@ -2,18 +2,25 @@ import React, { memo, useCallback, useEffect, useState } from 'react'
 import './App.css'
 import './style.css'
 
-import { Todo, TodoList } from './model/todo/model'
+import { createTodo, Todo, TodoList } from './model/todo/model'
 import { ElectrifiedDatabase, initElectricSqlJs } from 'electric-sql/browser'
-import { ElectricProvider } from 'electric-sql/react'
+import { ElectricProvider, useElectricQuery } from 'electric-sql/react'
 import { TodoRepository } from './model/todo/repository'
 import { TodoListRepository } from './model/todolist/repository'
+import { v4 as uuid } from 'uuid';
+import { createTodoList } from './model/todolist/model'
+
+type Repositories = {
+  todoRepo: TodoRepository,
+  todoListRepo: TodoListRepository,
+}
 
 const worker = new Worker("./worker.js", { type: "module" });
 
-function Header({ listId, repository }: { listId: string, repository: TodoRepository }) {
+function Header({ listId, repositories: { todoRepo } }: { listId: string, repositories: Repositories }) {
   const [newText, setNewText] = useState<string>("")
-  
-  return (    
+
+  return (
     <header className="header">
       <h1>todos</h1>
       <input
@@ -26,8 +33,8 @@ function Header({ listId, repository }: { listId: string, repository: TodoReposi
         onKeyUp={(e) => {
           const target = e.target as HTMLInputElement;
           if (e.key === "Enter" && target.value.trim() !== "") {
-            const todo = Todo.create(listId, target.value)
-            repository.save(todo)            
+            const todo = createTodo(uuid(), listId, target.value)
+            todoRepo.save(todo)
             setNewText("");
           }
         }}
@@ -56,8 +63,7 @@ const TodoView = memo(
     let body;
 
     const [text, setText] = useState(todo.text);
-    // useBind(todo, ["text", "completed"]);
-    
+
     if (editing) {
       body = (
         <input
@@ -99,14 +105,14 @@ const TodoView = memo(
 function Footer({
   remaining,
   todos,
-  clearCompleted,
   todoList,
+  clearCompleted,
   updateTodoList,
 }: {
   remaining: number;
   todos: Todo[];
-  clearCompleted: () => void;
   todoList: TodoList;
+  clearCompleted: () => void;
   updateTodoList: (list: TodoList) => Promise<void>
 }) {
   let clearCompletedButton;
@@ -128,7 +134,7 @@ function Footer({
         <li>
           <a
             className={todoList.filter === "all" ? "selected" : ""}
-            onClick={() => updateTodoList({...todoList, filter: "all"})}
+            onClick={() => updateTodoList({ ...todoList, filter: "all" })}
           >
             {" "}
             All{" "}
@@ -137,7 +143,7 @@ function Footer({
         <li>
           <a
             className={todoList.filter === "active" ? "selected" : ""}
-            onClick={() => updateTodoList({...todoList, filter: "active"})}
+            onClick={() => updateTodoList({ ...todoList, filter: "active" })}
           >
             Active
           </a>
@@ -145,7 +151,7 @@ function Footer({
         <li>
           <a
             className={todoList.filter === "completed" ? "selected" : ""}
-            onClick={() => updateTodoList({...todoList, filter: "completed"})}
+            onClick={() => updateTodoList({ ...todoList, filter: "completed" })}
           >
             Completed
           </a>
@@ -153,64 +159,51 @@ function Footer({
       </ul>
       {clearCompletedButton}
     </footer>
-  );
+  )
 }
 
-type TodoState = {
-  todoList?: TodoList
-  all?: Todo[]
-  active?: Todo[]
-  completed?: Todo[]
-}
+function TodoMVC({ listId, repositories: { todoListRepo, todoRepo } }: {
+  listId: string,
+  repositories: Repositories,
+}) {
 
-function TodoMVC({ listId, todoRepo, todoListRepo }: { listId: string, todoRepo: TodoRepository, todoListRepo: TodoListRepository }) {
-  const [state, setState] = useState<TodoState>()
-  const startEditing = useCallback(() => undefined,[listId])
-  
-  const saveTodo = (todo: Todo, text: string) => todoRepo.update({...todo, text})
+  const startEditing = useCallback((todo: Todo) =>
+    todoListRepo.update({ id: listId, editing: todo.id }), [listId])
+
+  const saveTodo = useCallback((todo: Todo, text: string) => {
+    todoRepo.update({ ...todo, text })
+    todoListRepo.update({ id: listId, editing: null })
+  }, [listId])
+
   const deleteTodo = (todo: Todo) => todoRepo.delete(todo)
-  const toggleTodo = (todo: Todo) => todoRepo.update({...todo, completed: !todo.completed})
-  
-  // shall we use deleteAll/saveAll?
-  const clearCompleted = () => completed.map( c => todoRepo.delete(c))
-  
+
+  const toggleTodo = (todo: Todo) => todoRepo.update({ ...todo, completed: !todo.completed })
+
+  const clearCompleted = () => completed.map(c => todoRepo.delete(c))
+
   const toggleAll = () => {
     if (remaining === 0) {
-      completed.map( c => todoRepo.update({...c, completed: false}))
+      completed.map(c => todoRepo.update({ ...c, completed: false }))
     } else {
-      active.map( c => todoRepo.update({...c, completed: true}))
+      active.map(c => todoRepo.update({ ...c, completed: true }))
     }
   }
 
   const updateTodoList = (list: TodoList): Promise<void> => todoListRepo.update(list)
-  
-  useEffect(() => {
-    const init = async () => {
 
-      const todoList = await todoListRepo.getById(listId)  
-
-      // shall we make a single query and filter out here?
-      const active = await todoRepo.list({listId, completed: false})  
-      const completed = await todoRepo.list({listId, completed: true})  
-      const all = await todoRepo.list({listId})  
-
-      setState({todoList, active, completed, all})
-    }
-
-    init()
-  }, [])
-
-  if (!state?.active || !state?.completed || !state.all){
-    console.log("not rendering todoMVC")  
+  const todoListQuery = useElectricQuery("SELECT id, editing, filter FROM todolist WHERE id = ?", [listId])
+  const todosQuery = useElectricQuery("SELECT * FROM todo WHERE listId = ?", [listId])
+  if (!todoListQuery.results || !todosQuery.results) {
     return null
   }
-  
-  const {todoList, active, completed, all} = state
+
+  const todoList = todoListQuery.results.map(resultsToTodoList)[0]
+  const { all, active, completed } = resultsToTodos(todosQuery.results)
 
   const remaining = active.length;
   let todos = todoList.filter === "active"
-      ? active
-      : todoList.filter === "completed"
+    ? active
+    : todoList.filter === "completed"
       ? completed
       : all
 
@@ -230,73 +223,112 @@ function TodoMVC({ listId, todoRepo, todoListRepo }: { listId: string, todoRepo:
     );
   }
 
-  console.log(`rendering todoMVC ${JSON.stringify(all)}`)
   return (
-    <div className="todoapp">      
-        <Header listId={listId} repository={todoRepo} />
-        <section
-          className="main"
-          style={all.length > 0 ? {} : { display: "none" }}
-        >
-          {toggleAllCheck}
-          <ul className="todo-list">
-            {todos.map((t: any) => (
-              <TodoView
-                key={t.id}
-                todo={t}
-                editing={todoList.editing === t.id}
-                startEditing={startEditing}
-                saveTodo={saveTodo}
-                deleteTodo={deleteTodo}
-                toggleTodo={toggleTodo}
-              />
-            ))}
-          </ul>
-          <Footer
-            remaining={remaining}
-            todos={all}
-            todoList={todoList}
-            clearCompleted={clearCompleted}
-            updateTodoList={updateTodoList}
-          />
-        </section>
+    <div className="todoapp">
+      <Header listId={listId} repositories={{ todoRepo, todoListRepo }} />
+      <section
+        className="main"
+        style={all.length > 0 ? {} : { display: "none" }}
+      >
+        {toggleAllCheck}
+        <ul className="todo-list">
+          {todos.map((t: any) => (
+            <TodoView
+              key={t.id}
+              todo={t}
+              editing={todoList.editing === t.id}
+              startEditing={startEditing}
+              saveTodo={saveTodo}
+              deleteTodo={deleteTodo}
+              toggleTodo={toggleTodo}
+            />
+          ))}
+        </ul>
+        <Footer
+          remaining={remaining}
+          todos={all}
+          todoList={todoList}
+          clearCompleted={clearCompleted}
+          updateTodoList={updateTodoList}
+        />
+      </section>
     </div>
   );
 }
 
-function ElectrifiedTodoMVC({ listId }: { listId: string }) {
-  const [ db, setDb ] = useState<ElectrifiedDatabase>()
-  const [ todoRepository, setTodosRepository ] = useState<TodoRepository>()
-  const [ todoListRepository, setTodoListRepository ] = useState<TodoListRepository>()
+function ElectrifiedTodoMVC() {
+  const [db, setDb] = useState<ElectrifiedDatabase>()
+  const [repositories, setRepositories] = useState<Repositories>()
+  const [todoList, setTodoList] = useState<TodoList>()
 
   useEffect(() => {
-    console.log("use effect")
     const init = async () => {
-      const SQL = await initElectricSqlJs(worker, {locateFile: (file: string) => `/${file}`})
+      const SQL = await initElectricSqlJs(worker, { locateFile: (file: string) => `/${file}` })
       const electrified = await SQL.openDatabase('todoMVC.db')
 
+    const todoRepo = new TodoRepository(electrified)
+    const todoListRepo = new TodoListRepository(electrified)
+
       setDb(electrified)
-      setTodosRepository(new TodoRepository(electrified))
-      setTodoListRepository(new TodoListRepository(electrified))
+      setRepositories({
+        todoRepo,
+        todoListRepo
+      })
+      
+      /*
+        TODO: Get todoList for user
+              Check database to get already existing user?
+      */
+     let todoList = await todoListRepo.getById("FAKE-USER-ID")
+     if(!todoList){
+        todoList = createTodoList("FAKE-USER-ID", "all")
+        todoListRepo.save(todoList)
+      }
+      setTodoList(todoList)
     }
 
     init();
   }, [])
 
-  if (  db === undefined || todoRepository === undefined || todoListRepository === undefined) {
+  if (db === undefined || repositories === undefined || todoList === undefined) {
     return null
   }
 
   return (
     <ElectricProvider db={db}>
-      <TodoMVC listId={listId} todoRepo={todoRepository} todoListRepo={todoListRepository} />
+      <TodoMVC
+        listId={todoList.id}
+        repositories={repositories}
+      />
     </ElectricProvider>
-  )  
-}
-
-export default function App({ listId }: { listId: string }) {
-  console.log("rendering app")
-  return(
-    <ElectrifiedTodoMVC listId={listId}/>
   )
 }
+
+export default function App() {
+  return (
+    <ElectrifiedTodoMVC/>
+  )
+}
+
+const resultsToTodos = (todos: any[]) => {
+  const { all, active, completed }: { all: Todo[], active: Todo[], completed: Todo[] } =
+    { all: [], active: [], completed: [] }
+
+  todos.map((t: any) => {
+    const todo = createTodo(
+      t.id as string,
+      t.listId as string,
+      t.text as string,
+      t.completed == 1 ? true : false)
+    all.push(todo)
+    if (t.completed) {
+      completed.push(todo)
+    } else {
+      active.push(todo)
+    }
+  })
+
+  return { all, active, completed }
+}
+
+const resultsToTodoList = (r: any) => ({ id: r.id, editing: r.editing, filter: r.filter })

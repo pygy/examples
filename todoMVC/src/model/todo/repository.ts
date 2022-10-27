@@ -72,11 +72,11 @@ export class TodoRepository{
         }
 
         const {columns, values} = res[0]
-        return values.map((value : any) => new Todo(
-            value[columns.indexOf("id")],
-            value[columns.indexOf("listId")],
-            value[columns.indexOf("text")],
-            value[columns.indexOf("completed")
-        ]))
+        return values.map((value : any) => ({
+            id: value[columns.indexOf("id")],
+            listId: value[columns.indexOf("listId")],
+            text: value[columns.indexOf("text")],
+            completed: value[columns.indexOf("completed")]
+        }))
     }
 }

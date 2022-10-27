@@ -4,7 +4,6 @@ export const data = {
       "body": [
         "CREATE TABLE \"todolist\" (\n    \"id\" TEXT,\n    \"filter\" TEXT,\n    \"editing\" INTEGER,\n    PRIMARY KEY (\"id\")\n);",
         "CREATE TABLE \"todo\" (\n    \"id\" TEXT,\n    \"listId\" TEXT,\n    \"text\" TEXT,\n    \"completed\" INTEGER DEFAULT 0 NOT NULL,\n    PRIMARY KEY (\"id\")\n  );",
-        "INSERT INTO \"todolist\"(id) VALUES (1);",
         "-- The ops log table\nCREATE TABLE IF NOT EXISTS _electric_oplog (\n  rowid INTEGER PRIMARY KEY AUTOINCREMENT,\n  namespace String NOT NULL,\n  tablename String NOT NULL,\n  optype String NOT NULL,\n  primaryKey String NOT NULL,\n  newRow String,\n  oldRow String,\n  timestamp TEXT\n);",
         "-- Somewhere to keep our metadata\nCREATE TABLE IF NOT EXISTS _electric_meta (\n  key TEXT,\n  value BLOB\n);",
         "-- Somewhere to track migrations\nCREATE TABLE IF NOT EXISTS _electric_migrations (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  name TEXT NOT NULL UNIQUE,\n  sha256 TEXT NOT NULL,\n  applied_at TEXT NOT NULL\n);",
@@ -32,7 +31,7 @@ export const data = {
       ],
       "encoding": "escaped",
       "name": "1666777137_todomvc",
-      "sha256": "cf0a00269e7fdc53e1f5bb0c88bb7c2dbd2faee43de2050ac8ffd5483cb6cf79",
+      "sha256": "667dcfd510936db646994998ca109aef583387d881333e79df5d9a2c34535ac3",
       "title": "todoMVC"
     }
   ]

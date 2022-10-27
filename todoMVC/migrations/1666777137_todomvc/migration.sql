@@ -17,5 +17,3 @@ CREATE TABLE "todo" (
     "completed" INTEGER DEFAULT 0 NOT NULL,
     PRIMARY KEY ("id")
   );
-
-INSERT INTO "todolist"(id) VALUES ("1");

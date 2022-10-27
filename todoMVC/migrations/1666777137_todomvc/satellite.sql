@@ -1,6 +1,6 @@
 /*
 ElectricDB Migration
-{"metadata": {"title": "todoMVC", "name": "1666777137_todomvc", "sha256": "cf0a00269e7fdc53e1f5bb0c88bb7c2dbd2faee43de2050ac8ffd5483cb6cf79"}}
+{"metadata": {"title": "todoMVC", "name": "1666777137_todomvc", "sha256": "667dcfd510936db646994998ca109aef583387d881333e79df5d9a2c34535ac3"}}
 */
 
 CREATE TABLE "todolist" (
@@ -17,8 +17,6 @@ CREATE TABLE "todo" (
     "completed" INTEGER DEFAULT 0 NOT NULL,
     PRIMARY KEY ("id")
   );
-
-INSERT INTO "todolist"(id) VALUES (1);
 /*---------------------------------------------
 Below are templated triggers added by Satellite
 ---------------------------------------------*/
