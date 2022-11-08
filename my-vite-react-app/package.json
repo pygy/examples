@@ -1,0 +1,32 @@
+{
+  "name": "my-vite-react-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@aphro/absurd-sql": "^0.0.53",
+    "@aphro/sql.js": "^1.7.0",
+    "@types/base-64": "^1.0.0",
+    "base-64": "^1.0.0",
+    "buffer": "^6.0.3",
+    "electric-sql": "^0.2.2",
+    "exponential-backoff": "^3.1.0",
+    "fastestsmallesttextencoderdecoder": "^1.0.22",
+    "fs-extra": "^10.1.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "yalc": "^1.0.0-pre.53"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.22",
+    "@types/react-dom": "^18.0.7",
+    "@vitejs/plugin-react": "^2.2.0",
+    "typescript": "^4.6.4",
+    "vite": "^3.2.0"
+  }
+}
