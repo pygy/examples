@@ -6,7 +6,9 @@ export type TodoList = {
     editing?: string | null
 }
 
-export function createTodoList(id: string, filter: FilterValues, editing?: string | null): TodoList {
+export const createTodoList = (id: string, filter: FilterValues, editing?: string | null): TodoList => {
     return { id, filter, editing }
 }
+
+export const resultsToTodoList = (r: any) => (createTodoList(r.id, r.editing, r.filter))
 

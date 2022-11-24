@@ -1,7 +1,7 @@
 import { Database } from "electric-sql/browser";
 import { Todo } from "./model";
 
-export type Filter = {
+type Filter = {
     listId: string
     completed?: boolean
 }
@@ -29,6 +29,14 @@ export class TodoRepository{
         await this.db.run(sql, args)
     }
 
+    async updateAll(filter: Filter): Promise<void> {
+        const sql = "UPDATE todo SET completed = ? WHERE listId = ?"
+        const args = [filter.completed ? 1 : 0, filter.listId]
+
+        console.log(`SQL: ${sql}, ${args}`)
+        await this.db.run(sql, args)
+    }
+
     async delete(todo: Todo): Promise<void> {
         const sql = "DELETE FROM todo WHERE id = ?"
         const args = [todo.id]
@@ -39,7 +47,7 @@ export class TodoRepository{
 
     async deleteAll(filter: Filter): Promise<void> {
         const sql = "DELETE FROM todo WHERE completed = ?"
-        const args = [filter ? 1 : 0]
+        const args = [filter.completed ? 1 : 0]
         
         console.log(`SQL: ${sql}, ${args}`)
         await this.db.run(sql, args)

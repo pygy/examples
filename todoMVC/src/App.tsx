@@ -2,13 +2,13 @@ import React, { memo, useCallback, useEffect, useState } from 'react'
 import './App.css'
 import './style.css'
 
-import { createTodo, Todo, TodoList } from './model/todo/model'
+import { createTodo, resultsToTodos, Todo, TodoList } from './model/todo/model'
 import { ElectrifiedDatabase, initElectricSqlJs } from 'electric-sql/browser'
 import { ElectricProvider, useElectricQuery } from 'electric-sql/react'
 import { TodoRepository } from './model/todo/repository'
 import { TodoListRepository } from './model/todolist/repository'
 import { v4 as uuid } from 'uuid';
-import { createTodoList } from './model/todolist/model'
+import { createTodoList, resultsToTodoList } from './model/todolist/model'
 
 type Repositories = {
   todoRepo: TodoRepository,
@@ -179,20 +179,15 @@ function TodoMVC({ listId, repositories: { todoListRepo, todoRepo } }: {
 
   const toggleTodo = (todo: Todo) => todoRepo.update({ ...todo, completed: !todo.completed })
 
-  const clearCompleted = () => completed.map(c => todoRepo.delete(c))
+  const clearCompleted = () => todoRepo.deleteAll({listId, completed: true})
 
-  const toggleAll = () => {
-    if (remaining === 0) {
-      completed.map(c => todoRepo.update({ ...c, completed: false }))
-    } else {
-      active.map(c => todoRepo.update({ ...c, completed: true }))
-    }
-  }
+  const toggleAll = () => todoRepo.updateAll({ listId, completed: remaining != 0 })
 
   const updateTodoList = (list: TodoList): Promise<void> => todoListRepo.update(list)
 
   const todoListQuery = useElectricQuery("SELECT id, editing, filter FROM todolist WHERE id = ?", [listId])
   const todosQuery = useElectricQuery("SELECT * FROM todo WHERE listId = ?", [listId])
+  
   if (!todoListQuery.results || !todosQuery.results) {
     return null
   }
@@ -309,26 +304,3 @@ export default function App() {
     <ElectrifiedTodoMVC/>
   )
 }
-
-const resultsToTodos = (todos: any[]) => {
-  const { all, active, completed }: { all: Todo[], active: Todo[], completed: Todo[] } =
-    { all: [], active: [], completed: [] }
-
-  todos.map((t: any) => {
-    const todo = createTodo(
-      t.id as string,
-      t.listId as string,
-      t.text as string,
-      t.completed == 1 ? true : false)
-    all.push(todo)
-    if (t.completed) {
-      completed.push(todo)
-    } else {
-      active.push(todo)
-    }
-  })
-
-  return { all, active, completed }
-}
-
-const resultsToTodoList = (r: any) => ({ id: r.id, editing: r.editing, filter: r.filter })
