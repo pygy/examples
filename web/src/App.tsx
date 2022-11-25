@@ -4,16 +4,14 @@ import './App.css'
 import './style.css'
 
 import { initElectricSqlJs, ElectrifiedDatabase} from "electric-sql/browser"
-import { ElectricProvider, useElectric, useElectricQuery } from 'electric-sql/react'
-
-type ConnectivityStatus = "connected" | "disconnected"
+import { ElectricProvider, useElectric, useElectricQuery, useConnectivityState } from 'electric-sql/react'
 
 const dbName = 'example.db'
 const worker = new Worker("./worker.js", { type: "module" });
 
 export const ElectrifiedExample = () => {
   const [ db, setDb ] = useState<ElectrifiedDatabase>()
-
+  
   useEffect(() => {
     const init = async () => {
       const SQL = await initElectricSqlJs(worker, {locateFile: (file: string) => `/${file}`})
@@ -32,13 +30,11 @@ export const ElectrifiedExample = () => {
   )
 }
 
-const ExampleComponent = () => {
-  // Note: this presumes network connectivity is available.
-  // In the future we actually check the state of the network.
-  const [ connectivity, setConnectivity ] = useState<ConnectivityStatus>("connected")
-
+const ExampleComponent = () => {  
   const { results, error } = useElectricQuery('SELECT value FROM items', [])
   const db = useElectric() as ElectrifiedDatabase
+
+  const [connectivityState, setConnectivityState] = useConnectivityState()
 
   if (error !== undefined) {
     return (
@@ -65,9 +61,9 @@ const ExampleComponent = () => {
   } 
   
   const toggleConnectivity = () => {
-    const value = connectivity == 'connected' ? 'disconnected' : 'connected' 
-    db.electric.connectivityChange(value, dbName)
-    setConnectivity(value)
+    const value = (connectivityState == 'available' || connectivityState == 'connected') ? 'disconnected' : 'available' 
+    db.electric.changeConnectivityState(value, dbName)
+    setConnectivityState(value)
   }  
 
   return (
@@ -85,7 +81,7 @@ const ExampleComponent = () => {
       <p className='text'>Clear</p>
       </button>
       <button className='button' onClick={toggleConnectivity}>
-      <p className='text'>{connectivity}</p>
+      <p className='text'>{connectivityState}</p>
       </button>
     </div>
   )
