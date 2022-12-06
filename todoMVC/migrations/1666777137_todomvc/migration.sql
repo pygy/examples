@@ -12,7 +12,7 @@ CREATE TABLE "todolist" (
 
 CREATE TABLE "todo" (
     "id" TEXT,
-    "listId" TEXT,
+    "listid" TEXT,
     "text" TEXT,
     "completed" INTEGER DEFAULT 0 NOT NULL,
     PRIMARY KEY ("id")

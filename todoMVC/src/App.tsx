@@ -9,6 +9,7 @@ import { TodoRepository } from './model/todo/repository'
 import { TodoListRepository } from './model/todolist/repository'
 import { v4 as uuid } from 'uuid';
 import { createTodoList, resultsToTodoList } from './model/todolist/model'
+import config from '../electric-config'
 
 type Repositories = {
   todoRepo: TodoRepository,
@@ -17,7 +18,7 @@ type Repositories = {
 
 const worker = new Worker("./worker.js", { type: "module" });
 
-function Header({ listId, repositories: { todoRepo } }: { listId: string, repositories: Repositories }) {
+function Header({ listid, repositories: { todoRepo } }: { listid: string, repositories: Repositories }) {
   const [newText, setNewText] = useState<string>("")
 
   return (
@@ -33,7 +34,7 @@ function Header({ listId, repositories: { todoRepo } }: { listId: string, reposi
         onKeyUp={(e) => {
           const target = e.target as HTMLInputElement;
           if (e.key === "Enter" && target.value.trim() !== "") {
-            const todo = createTodo(uuid(), listId, target.value)
+            const todo = createTodo(uuid(), listid, target.value)
             todoRepo.save(todo)
             setNewText("");
           }
@@ -63,6 +64,8 @@ const TodoView = memo(
     let body;
 
     const [text, setText] = useState(todo.text);
+
+    console.log(JSON.stringify(todo))
 
     if (editing) {
       body = (
@@ -162,31 +165,31 @@ function Footer({
   )
 }
 
-function TodoMVC({ listId, repositories: { todoListRepo, todoRepo } }: {
-  listId: string,
+function TodoMVC({ listid, repositories: { todoListRepo, todoRepo } }: {
+  listid: string,
   repositories: Repositories,
 }) {
 
   const startEditing = useCallback((todo: Todo) =>
-    todoListRepo.update({ id: listId, editing: todo.id }), [listId])
+    todoListRepo.update({ id: listid, editing: todo.id }), [listid])
 
   const saveTodo = useCallback((todo: Todo, text: string) => {
     todoRepo.update({ ...todo, text })
-    todoListRepo.update({ id: listId, editing: null })
-  }, [listId])
+    todoListRepo.update({ id: listid, editing: null })
+  }, [listid])
 
   const deleteTodo = (todo: Todo) => todoRepo.delete(todo)
 
   const toggleTodo = (todo: Todo) => todoRepo.update({ ...todo, completed: !todo.completed })
 
-  const clearCompleted = () => todoRepo.deleteAll({listId, completed: true})
+  const clearCompleted = () => todoRepo.deleteAll({listid, completed: true})
 
-  const toggleAll = () => todoRepo.updateAll({ listId, completed: remaining != 0 })
+  const toggleAll = () => todoRepo.updateAll({ listid, completed: remaining != 0 })
 
   const updateTodoList = (list: TodoList): Promise<void> => todoListRepo.update(list)
 
-  const todoListQuery = useElectricQuery("SELECT id, editing, filter FROM todolist WHERE id = ?", [listId])
-  const todosQuery = useElectricQuery("SELECT * FROM todo WHERE listId = ?", [listId])
+  const todoListQuery = useElectricQuery("SELECT id, editing, filter FROM todolist WHERE id = ?", [listid])
+  const todosQuery = useElectricQuery("SELECT * FROM todo WHERE listid = ?", [listid])
   
   if (!todoListQuery.results || !todosQuery.results) {
     return null
@@ -220,7 +223,7 @@ function TodoMVC({ listId, repositories: { todoListRepo, todoRepo } }: {
 
   return (
     <div className="todoapp">
-      <Header listId={listId} repositories={{ todoRepo, todoListRepo }} />
+      <Header listid={listid} repositories={{ todoRepo, todoListRepo }} />
       <section
         className="main"
         style={all.length > 0 ? {} : { display: "none" }}
@@ -259,26 +262,21 @@ function ElectrifiedTodoMVC() {
   useEffect(() => {
     const init = async () => {
       const SQL = await initElectricSqlJs(worker, { locateFile: (file: string) => `/${file}` })
-      const electrified = await SQL.openDatabase('todoMVC.db')
+      const electrified = await SQL.openDatabase('todoMVC.db', config)
 
-    const todoRepo = new TodoRepository(electrified)
-    const todoListRepo = new TodoListRepository(electrified)
+      const todoRepo = new TodoRepository(electrified)
+      const todoListRepo = new TodoListRepository(electrified)
 
-      setDb(electrified)
-      setRepositories({
-        todoRepo,
-        todoListRepo
-      })
-      
-      /*
-        TODO: Get todoList for user
-              Check database to get already existing user?
-      */
-     let todoList = await todoListRepo.getById("FAKE-USER-ID")
-     if(!todoList){
+        setDb(electrified)
+        setRepositories({todoRepo,todoListRepo})
+        
+      // TODO: Get todoList for user
+      let todoList = await todoListRepo.getById("FAKE-USER-ID")
+      if(!todoList){
         todoList = createTodoList("FAKE-USER-ID", "all")
-        todoListRepo.save(todoList)
+        todoListRepo.save(todoList)        
       }
+      console.log(`set todolist ${JSON.stringify(todoList)}`)
       setTodoList(todoList)
     }
 
@@ -292,7 +290,7 @@ function ElectrifiedTodoMVC() {
   return (
     <ElectricProvider db={db}>
       <TodoMVC
-        listId={todoList.id}
+        listid={todoList.id}
         repositories={repositories}
       />
     </ElectricProvider>

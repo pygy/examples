@@ -6,13 +6,13 @@ ElectricDB Migration
 CREATE TABLE "todolist" (
     "id" TEXT,
     "filter" TEXT,
-    "editing" INTEGER,
+    "editing" TEXT,
     PRIMARY KEY ("id")
 );
 
 CREATE TABLE "todo" (
     "id" TEXT,
-    "listId" TEXT,
+    "listid" TEXT,
     "text" TEXT,
     "completed" INTEGER DEFAULT 0 NOT NULL,
     PRIMARY KEY ("id")
@@ -80,7 +80,7 @@ CREATE TRIGGER insert_main_todo_into_oplog
    WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.todo')
 BEGIN
   INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)
-  VALUES ('main', 'todo', 'INSERT', json_object('id', new.id), json_object('id', new.id, 'listId', new.listId, 'text', new.text, 'completed', new.completed), NULL, NULL);
+  VALUES ('main', 'todo', 'INSERT', json_object('id', new.id), json_object('id', new.id, 'listid', new.listid, 'text', new.text, 'completed', new.completed), NULL, NULL);
 END;
 
 DROP TRIGGER IF EXISTS update_main_todo_into_oplog;
@@ -89,7 +89,7 @@ CREATE TRIGGER update_main_todo_into_oplog
    WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.todo')
 BEGIN
   INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)
-  VALUES ('main', 'todo', 'UPDATE', json_object('id', new.id), json_object('id', new.id, 'listId', new.listId, 'text', new.text, 'completed', new.completed), json_object('id', old.id, 'listId', old.listId, 'text', old.text, 'completed', old.completed), NULL);
+  VALUES ('main', 'todo', 'UPDATE', json_object('id', new.id), json_object('id', new.id, 'listid', new.listid, 'text', new.text, 'completed', new.completed), json_object('id', old.id, 'listid', old.listid, 'text', old.text, 'completed', old.completed), NULL);
 END;
 
 DROP TRIGGER IF EXISTS delete_main_todo_into_oplog;
@@ -98,7 +98,7 @@ CREATE TRIGGER delete_main_todo_into_oplog
    WHEN 1 == (SELECT flag from _electric_trigger_settings WHERE tablename == 'main.todo')
 BEGIN
   INSERT INTO _electric_oplog (namespace, tablename, optype, primaryKey, newRow, oldRow, timestamp)
-  VALUES ('main', 'todo', 'DELETE', json_object('id', old.id), NULL, json_object('id', old.id, 'listId', old.listId, 'text', old.text, 'completed', old.completed), NULL);
+  VALUES ('main', 'todo', 'DELETE', json_object('id', old.id), NULL, json_object('id', old.id, 'listid', old.listid, 'text', old.text, 'completed', old.completed), NULL);
 END;
 
 

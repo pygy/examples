@@ -2,7 +2,7 @@ import { Database } from "electric-sql/browser";
 import { Todo } from "./model";
 
 type Filter = {
-    listId: string
+    listid: string
     completed?: boolean
 }
 
@@ -14,8 +14,8 @@ export class TodoRepository{
     }
 
     async save(todo: Todo): Promise<void> {
-        const sql = "INSERT INTO todo(id, listId, text) VALUES (?, ?, ?)"
-        const args = [todo.id, todo.listId, todo.text]
+        const sql = "INSERT INTO todo(id, listid, text) VALUES (?, ?, ?)"
+        const args = [todo.id, todo.listid, todo.text]
         
         console.log(`SQL: ${sql}, ${args}`)
         await this.db.run(sql, args)
@@ -30,8 +30,8 @@ export class TodoRepository{
     }
 
     async updateAll(filter: Filter): Promise<void> {
-        const sql = "UPDATE todo SET completed = ? WHERE listId = ?"
-        const args = [filter.completed ? 1 : 0, filter.listId]
+        const sql = "UPDATE todo SET completed = ? WHERE listid = ?"
+        const args = [filter.completed ? 1 : 0, filter.listid]
 
         console.log(`SQL: ${sql}, ${args}`)
         await this.db.run(sql, args)
@@ -54,12 +54,12 @@ export class TodoRepository{
     }
 
     async list(filter: Filter): Promise<Todo[]> {
-        let sql = "SELECT id, listId, text, completed FROM todo"
+        let sql = "SELECT id, listid, text, completed FROM todo"
         const where = []
         const args = []
-        if(filter.listId){
-            where.push("listId = ?")
-            args.push(filter.listId)
+        if (filter.listid) {
+            where.push("listid = ?")
+            args.push(filter.listid)
         }
         if(filter.completed != undefined){
             where.push("completed = ?")
@@ -82,7 +82,7 @@ export class TodoRepository{
         const {columns, values} = res[0]
         return values.map((value : any) => ({
             id: value[columns.indexOf("id")],
-            listId: value[columns.indexOf("listId")],
+            listid: value[columns.indexOf("listid")],
             text: value[columns.indexOf("text")],
             completed: value[columns.indexOf("completed")]
         }))

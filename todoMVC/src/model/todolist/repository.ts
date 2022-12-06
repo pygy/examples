@@ -8,9 +8,9 @@ export class TodoListRepository {
         this.db = db
     }
 
-    async getById(listId: string): Promise<TodoList | null> {
+    async getById(listid: string): Promise<TodoList | null> {
         const sql = "SELECT id, editing, filter FROM todolist WHERE id = ?"
-        const args = [listId]
+        const args = [listid]
 
         const res = await this.db.exec(sql, args)
         
@@ -27,12 +27,16 @@ export class TodoListRepository {
     }
 
     async save(todoList: TodoList): Promise<void> {
-        const sql = "INSERT INTO todolist(id, filter, editing) values (?, ?, ?)"
+        const sql = "INSERT INTO todolist(id, filter, editing) values (?, ?, ?) ON CONFLICT DO UPDATE SET filter = ?, editing = ?"
         const args = [
             todoList.id,
             todoList.filter ? todoList.filter : "all",
-            todoList.editing ? todoList.editing : null
+            todoList.editing ? todoList.editing : "",
+            todoList.filter ? todoList.filter : "all",
+            todoList.editing ? todoList.editing : ""
         ]
+
+        console.log(`SQL: ${sql}, ${args}`)
         await this.db.run(sql, args)
     }
 

@@ -2,13 +2,13 @@ export type TodoList = any
 
 export type Todo = {
     id: string
-    listId: string
+    listid: string
     text: string
     completed: boolean
     }
     
-export const createTodo = (id: string, listId: string, text: string, completed?: boolean) : Todo => {
-        return {id, listId, text, completed: completed || false}
+export const createTodo = (id: string, listid: string, text: string, completed: boolean = false) : Todo => {
+        return {id, listid, text, completed}
 }
 
 export const resultsToTodos = (todos: any[]) => {
@@ -16,7 +16,7 @@ export const resultsToTodos = (todos: any[]) => {
       { all: [], active: [], completed: [] }
   
     todos.map((t: any) => {
-      const todo = createTodo(t.id, t.listId, t.text, t.completed == 1 ? true : false)
+      const todo = createTodo(t.id, t.listid, t.text, t.completed)
       all.push(todo)
       if (t.completed) {
         completed.push(todo)

@@ -13,11 +13,13 @@
     "@aphro/absurd-sql": "^0.0.53",
     "@aphro/sql.js": "^1.7.0",
     "base-64": "^1.0.0",
-    "electric-sql": "^0.2.2",
+    "electric-sql": "file:.yalc/electric-sql",
+    "exponential-backoff": "^3.1.0",
     "fs-extra": "^10.0.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "yalc": "^1.0.0-pre.53"
   },
   "devDependencies": {
     "@types/node": "^16.9.1",
